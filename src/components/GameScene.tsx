@@ -197,6 +197,21 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   const carColor = selectedCar?.color || '#cc0000';
   const carMass = selectedCar?.weight || 1400;
   const carPower = selectedCar?.power || 450;
+  const carTorque = selectedCar?.torque || 450;
+  const carEngineLayout = selectedCar?.engineLayout || 'Mid';
+  const carDrivetrain = selectedCar?.drivetrain || 'RWD';
+  const carHandling = selectedCar?.handling || 8.5;
+  
+  // Engine position affects weight distribution and handling
+  const weightDistribution = carEngineLayout === 'Rear' ? 0.4 : 
+                             carEngineLayout === 'Mid' ? 0.45 : 0.5; // Front weight %
+  
+  // Suspension tuning based on handling rating
+  const suspensionStiffnessFront = 30 + (carHandling * 0.5);
+  const suspensionStiffnessRear = 28 + (carHandling * 0.5);
+  
+  // Grip level based on handling
+  const gripLevel = 1.0 + ((carHandling - 8.0) * 0.15);
   
   // Realistic physics constants
   const wheelRadius = 0.35;
@@ -277,12 +292,12 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
       { 
         axleLocal: [-1, 0, 0], 
         directionLocal: [0, -1, 0], 
-        suspensionStiffness: 35,  // ~35,000 N/m per wheel for 1500kg car
+        suspensionStiffness: suspensionStiffnessFront,  // Dynamic based on car handling
         suspensionRestLength: 0.21,  // 70% of max travel (0.3m)
         radius: wheelRadius, 
         isFrontWheel: true, 
         chassisConnectionPointLocal: wheelPositions[0] as [number, number, number],
-        frictionSlip: 1.2,         // Grip limit before slip
+        frictionSlip: 1.2 * gripLevel,         // Grip level based on handling
         rollInfluence: 0.1,      // Reduce roll for stability
         suspensionCompression: 4.5,
         suspensionRelaxation: 3.5,
@@ -292,12 +307,12 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
       { 
         axleLocal: [1, 0, 0], 
         directionLocal: [0, -1, 0], 
-        suspensionStiffness: 35, 
+        suspensionStiffness: suspensionStiffnessFront, 
         suspensionRestLength: 0.21,
         radius: wheelRadius, 
         isFrontWheel: true, 
         chassisConnectionPointLocal: wheelPositions[1] as [number, number, number],
-        frictionSlip: 1.2,
+        frictionSlip: 1.2 * gripLevel,
         rollInfluence: 0.1,
         suspensionCompression: 4.5,
         suspensionRelaxation: 3.5,
@@ -307,12 +322,12 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
       { 
         axleLocal: [-1, 0, 0], 
         directionLocal: [0, -1, 0], 
-        suspensionStiffness: 30,  // Slightly softer rear for traction
+        suspensionStiffness: suspensionStiffnessRear,  // Slightly softer rear for traction
         suspensionRestLength: 0.21,
         radius: wheelRadius, 
         isFrontWheel: false, 
         chassisConnectionPointLocal: wheelPositions[2] as [number, number, number],
-        frictionSlip: 1.3,  // Slightly more grip at rear
+        frictionSlip: 1.3 * gripLevel,  // Slightly more grip at rear
         rollInfluence: 0.15,
         suspensionCompression: 4.0,
         suspensionRelaxation: 3.0,
@@ -322,12 +337,12 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
       { 
         axleLocal: [1, 0, 0], 
         directionLocal: [0, -1, 0], 
-        suspensionStiffness: 30, 
+        suspensionStiffness: suspensionStiffnessRear, 
         suspensionRestLength: 0.21,
         radius: wheelRadius, 
         isFrontWheel: false, 
         chassisConnectionPointLocal: wheelPositions[3] as [number, number, number],
-        frictionSlip: 1.3,
+        frictionSlip: 1.3 * gripLevel,
         rollInfluence: 0.15,
         suspensionCompression: 4.0,
         suspensionRelaxation: 3.0,
@@ -379,13 +394,16 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   }, []);
 
   useFrame(() => {
-    // Realistic engine torque: 300-500 Nm, scaled by gear
+    // Realistic engine torque: use actual car torque value
     const gearRatios = [0, 3.8, 2.6, 1.9, 1.4, 1.1, 0.9];
     const gearRatio = gearRatios[gear] || 1;
-    const maxEngineTorque = carPower * 10;  // ~4000 Nm peak torque
+    const maxEngineTorque = carTorque;  // Use actual torque from car data
     const maxForce = maxEngineTorque * gearRatio;  // Force = torque / wheel radius
     const maxBrakeForce = 20000;       // Strong brakes (20,000 Nm per axle)
     const maxSteerVal = 0.5;        // ~30 degrees max steering
+    
+    // Steering sensitivity based on handling (better handling = more responsive)
+    const baseSteerSensitivity = 0.3 + ((carHandling - 8.0) * 0.05);
 
     // Track velocity for physics calculations
     chassisApi.velocity.subscribe((v) => {
@@ -430,12 +448,28 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     setRPM(r => r + (targetRPM - r) * 0.2);
     onRPMChange(rpm);
 
-    // Apply engine force to rear wheels (rear-wheel drive)
+    // Apply engine force based on drivetrain
     const engineForce = throttle * maxForce;
-    vehicleApi.applyEngineForce(engineForce, 2);  // Rear left
-    vehicleApi.applyEngineForce(engineForce, 3); // Rear right
+    
+    if (carDrivetrain === 'AWD') {
+      // All-wheel drive - distribute to all wheels
+      vehicleApi.applyEngineForce(engineForce * 0.45, 0);  // Front left
+      vehicleApi.applyEngineForce(engineForce * 0.45, 1);  // Front right
+      vehicleApi.applyEngineForce(engineForce * 0.55, 2);  // Rear left (slightly more rear bias)
+      vehicleApi.applyEngineForce(engineForce * 0.55, 3); // Rear right
+    } else if (carEngineLayout === 'Front') {
+      // Front engine RWD - front weight bias, power to rear
+      vehicleApi.applyEngineForce(0, 0);  // Front left
+      vehicleApi.applyEngineForce(0, 1);  // Front right
+      vehicleApi.applyEngineForce(engineForce * 0.85, 2);  // Rear left (more power for traction)
+      vehicleApi.applyEngineForce(engineForce * 0.85, 3); // Rear right
+    } else {
+      // Mid/Rear engine RWD - rear weight bias
+      vehicleApi.applyEngineForce(engineForce, 2);  // Rear left
+      vehicleApi.applyEngineForce(engineForce, 3); // Rear right
+    }
 
-    // Front-wheel drive assist for low-speed traction
+    // Front-wheel drive assist for front-engine cars at low speed
     if (currentSpeed < 15 && throttle > 0) {
       vehicleApi.applyEngineForce(engineForce * 0.3, 0);
       vehicleApi.applyEngineForce(engineForce * 0.3, 1);

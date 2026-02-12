@@ -14,6 +14,15 @@ export interface CarData {
   color: string;
   price: number;
   weight: number; // kg
+  // GT3-specific properties
+  engineLayout: 'Front' | 'Mid' | 'Rear';
+  engineType: string;
+  displacement: number; // liters
+  torque: number; // Nm
+  liveries: { name: string; primary: string; secondary: string; accent: string }[];
+  handlingNotes: string;
+  drivetrain: 'RWD' | 'AWD';
+  restrictor: number; // mm restrictor plate
 }
 
 export interface TrackData {
@@ -27,16 +36,255 @@ export interface TrackData {
 }
 
 export const CARS: CarData[] = [
-  { id: 'porsche_gt3', name: '911 GT3 RS', manufacturer: 'Porsche', class: 'GT3', maxSpeed: 193, acceleration: 8.5, handling: 9.0, power: 518, color: '#ff6600', price: 185000, weight: 1440 },
-  { id: 'lamborghini_gallardo', name: 'Gallardo LP 570-4', manufacturer: 'Lamborghini', class: 'GT3', maxSpeed: 192, acceleration: 8.4, handling: 8.8, power: 562, color: '#cccc00', price: 177000, weight: 1340 },
-  { id: 'nissan_gtr', name: 'GT-R R35', manufacturer: 'Nissan', class: 'GT1', maxSpeed: 196, acceleration: 8.7, handling: 8.5, power: 485, color: '#333333', price: 79000, weight: 1740 },
-  { id: 'mclaren_mp4', name: 'MP4-12C', manufacturer: 'McLaren', class: 'GT3', maxSpeed: 207, acceleration: 9.0, handling: 9.2, power: 616, color: '#ff0000', price: 245000, weight: 1475 },
-  { id: 'bmw_m3', name: 'M3 E92 GTS', manufacturer: 'BMW', class: 'GT3', maxSpeed: 190, acceleration: 8.3, handling: 8.9, power: 450, color: '#ff6600', price: 135000, weight: 1595 },
-  { id: 'ford_mustang', name: 'GT500', manufacturer: 'Ford', class: 'Muscle', maxSpeed: 180, acceleration: 7.8, handling: 7.0, power: 662, color: '#ffffff', price: 55000, weight: 1770 },
-  { id: 'toyota_supra', name: 'Supra A80', manufacturer: 'Toyota', class: 'Tuner', maxSpeed: 175, acceleration: 7.5, handling: 7.8, power: 326, color: '#cc0000', price: 45000, weight: 1665 },
-  { id: 'audi_r8', name: 'R8 LMS GT3', manufacturer: 'Audi', class: 'GT3', maxSpeed: 198, acceleration: 8.8, handling: 9.1, power: 570, color: '#ff0000', price: 210000, weight: 1465 },
-  { id: 'mercedes_slr', name: 'SLR McLaren', manufacturer: 'Mercedes', class: 'GT1', maxSpeed: 206, acceleration: 8.9, handling: 8.7, power: 617, color: '#cccccc', price: 195000, weight: 1875 },
-  { id: 'chevrolet_c6', name: 'Corvette Z06', manufacturer: 'Chevrolet', class: 'GT3', maxSpeed: 198, acceleration: 8.6, handling: 8.4, power: 505, color: '#ff0000', price: 88000, weight: 1420 },
+  // Porsche 911 GT3 R (992) - Rear Engine
+  { 
+    id: 'porsche_911_gt3_r', 
+    name: '911 GT3 R (992)', 
+    manufacturer: 'Porsche', 
+    class: 'GT3', 
+    maxSpeed: 199, 
+    acceleration: 8.8, 
+    handling: 9.2, 
+    power: 550, 
+    color: '#0066b2', 
+    price: 245000, 
+    weight: 1270,
+    engineLayout: 'Rear',
+    engineType: '4.2L Flat-6 NA',
+    displacement: 4.2,
+    torque: 465,
+    liveries: [
+      { name: 'Manthey EMA Gulf', primary: '#003399', secondary: '#ff6600', accent: '#ffffff' },
+      { name: 'Martini', primary: '#ffffff', secondary: '#cc0000', accent: '#003399' }
+    ],
+    handlingNotes: 'Snappy rotation, rear bias demands throttle control; stable at 180mph',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // BMW M4 GT3 Evo - Front Engine
+  { 
+    id: 'bmw_m4_gt3_evo', 
+    name: 'M4 GT3 Evo', 
+    manufacturer: 'BMW', 
+    class: 'GT3', 
+    maxSpeed: 197, 
+    acceleration: 8.7, 
+    handling: 8.8, 
+    power: 590, 
+    color: '#0066b2', 
+    price: 235000, 
+    weight: 1290,
+    engineLayout: 'Front',
+    engineType: '3.0L I6 Turbo',
+    displacement: 3.0,
+    torque: 650,
+    liveries: [
+      { name: 'M Motorsport', primary: '#0066b2', secondary: '#ffffff', accent: '#cc0000' }
+    ],
+    handlingNotes: 'Forgiving, high top-speed king; easy for beginners',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // Mercedes-AMG GT3 Evo - Front Engine
+  { 
+    id: 'mercedes_amg_gt3_evo', 
+    name: 'AMG GT3 Evo', 
+    manufacturer: 'Mercedes-AMG', 
+    class: 'GT3', 
+    maxSpeed: 198, 
+    acceleration: 8.6, 
+    handling: 8.7, 
+    power: 550, 
+    color: '#00aaff', 
+    price: 249000, 
+    weight: 1330,
+    engineLayout: 'Front',
+    engineType: '6.2L V8 NA',
+    displacement: 6.2,
+    torque: 675,
+    liveries: [
+      { name: 'Petronas', primary: '#00aaff', secondary: '#009944', accent: '#ffffff' },
+      { name: 'Classic Silver', primary: '#cccccc', secondary: '#ffffff', accent: '#000000' }
+    ],
+    handlingNotes: 'Stable straight-line rocket, soft tires',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // Audi R8 LMS GT3 Evo II - Mid Engine
+  { 
+    id: 'audi_r8_gt3_evo2', 
+    name: 'R8 LMS GT3 Evo II', 
+    manufacturer: 'Audi', 
+    class: 'GT3', 
+    maxSpeed: 201, 
+    acceleration: 8.9, 
+    handling: 9.3, 
+    power: 585, 
+    color: '#ffcc00', 
+    price: 229000, 
+    weight: 1290,
+    engineLayout: 'Mid',
+    engineType: '5.2L V10 NA',
+    displacement: 5.2,
+    torque: 550,
+    liveries: [
+      { name: 'Phoenix Yellow', primary: '#ffcc00', secondary: '#000000', accent: '#ffffff' },
+      { name: 'WRT White', primary: '#ffffff', secondary: '#cc0000', accent: '#000000' }
+    ],
+    handlingNotes: 'Rotation king, narrow setup window',
+    drivetrain: 'RWD',
+    restrictor: 43
+  },
+  // Ferrari 296 GT3 - Mid Engine
+  { 
+    id: 'ferrari_296_gt3', 
+    name: '296 GT3', 
+    manufacturer: 'Ferrari', 
+    class: 'GT3', 
+    maxSpeed: 202, 
+    acceleration: 9.0, 
+    handling: 9.2, 
+    power: 600, 
+    color: '#cc0000', 
+    price: 259000, 
+    weight: 1250,
+    engineLayout: 'Mid',
+    engineType: '2.9L V6 Turbo',
+    displacement: 2.9,
+    torque: 710,
+    liveries: [
+      { name: 'AF Corse Red', primary: '#cc0000', secondary: '#ffcc00', accent: '#000000' },
+      { name: '499P Tricolor', primary: '#cc0000', secondary: '#ffffff', accent: '#009446' }
+    ],
+    handlingNotes: 'Balanced pace monster, grippy',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // Lamborghini Huracán GT3 Evo2 - Mid Engine
+  { 
+    id: 'lamborghini_huracan_gt3_evo2', 
+    name: 'Huracán GT3 Evo2', 
+    manufacturer: 'Lamborghini', 
+    class: 'GT3', 
+    maxSpeed: 198, 
+    acceleration: 8.8, 
+    handling: 9.1, 
+    power: 580, 
+    color: '#666666', 
+    price: 239000, 
+    weight: 1290,
+    engineLayout: 'Mid',
+    engineType: '5.2L V10 NA',
+    displacement: 5.2,
+    torque: 560,
+    liveries: [
+      { name: 'Grigio', primary: '#666666', secondary: '#000000', accent: '#ff6600' },
+      { name: 'Squadra Orange', primary: '#ff6600', secondary: '#000000', accent: '#ffffff' }
+    ],
+    handlingNotes: 'Drifty fun, Evo2 aero upgrade',
+    drivetrain: 'RWD',
+    restrictor: 54
+  },
+  // McLaren 720S GT3 Evo - Mid Engine
+  { 
+    id: 'mclaren_720s_gt3_evo', 
+    name: '720S GT3 Evo', 
+    manufacturer: 'McLaren', 
+    class: 'GT3', 
+    maxSpeed: 205, 
+    acceleration: 9.1, 
+    handling: 9.4, 
+    power: 590, 
+    color: '#ff6600', 
+    price: 269000, 
+    weight: 1280,
+    engineLayout: 'Mid',
+    engineType: '4.0L V8 Turbo',
+    displacement: 4.0,
+    torque: 770,
+    liveries: [
+      { name: 'MS7 Papaya', primary: '#ff6600', secondary: '#000000', accent: '#ffffff' },
+      { name: 'Loctite Concepts', primary: '#003399', secondary: '#00ccff', accent: '#ff6600' }
+    ],
+    handlingNotes: 'Stable mid-engine, rotates like a go-kart',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // Aston Martin Vantage GT3 - Front Engine
+  { 
+    id: 'aston_martin_vantage_gt3', 
+    name: 'Vantage GT3', 
+    manufacturer: 'Aston Martin', 
+    class: 'GT3', 
+    maxSpeed: 196, 
+    acceleration: 8.6, 
+    handling: 8.9, 
+    power: 550, 
+    color: '#006633', 
+    price: 229000, 
+    weight: 1290,
+    engineLayout: 'Front',
+    engineType: '4.0L V8 Turbo',
+    displacement: 4.0,
+    torque: 700,
+    liveries: [
+      { name: 'AMR Green/Gold', primary: '#006633', secondary: '#cca300', accent: '#ffffff' },
+      { name: 'TF Silver', primary: '#cccccc', secondary: '#000000', accent: '#cc0000' }
+    ],
+    handlingNotes: 'Easy drive, good tires',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // Corvette Z06 GT3.R - Front-Mid Engine
+  { 
+    id: 'corvette_z06_gt3r', 
+    name: 'Z06 GT3.R', 
+    manufacturer: 'Chevrolet', 
+    class: 'GT3', 
+    maxSpeed: 198, 
+    acceleration: 8.7, 
+    handling: 8.8, 
+    power: 590, 
+    color: '#ffcc00', 
+    price: 219000, 
+    weight: 1290,
+    engineLayout: 'Front',
+    engineType: '5.5L V8 NA',
+    displacement: 5.5,
+    torque: 595,
+    liveries: [
+      { name: 'Pratt & Miller Yellow', primary: '#ffcc00', secondary: '#000000', accent: '#ffffff' },
+      { name: 'Hendrick Blue', primary: '#003399', secondary: '#ffffff', accent: '#cc0000' }
+    ],
+    handlingNotes: 'Improved balance, V8 bellow',
+    drivetrain: 'RWD',
+    restrictor: 0
+  },
+  // Ford Mustang GT3 - Front Engine
+  { 
+    id: 'ford_mustang_gt3', 
+    name: 'Mustang GT3', 
+    manufacturer: 'Ford', 
+    class: 'GT3', 
+    maxSpeed: 197, 
+    acceleration: 8.6, 
+    handling: 8.5, 
+    power: 585, 
+    color: '#003399', 
+    price: 199000, 
+    weight: 1290,
+    engineLayout: 'Front',
+    engineType: '5.4L V8 NA',
+    displacement: 5.4,
+    torque: 570,
+    liveries: [
+      { name: 'Multimatic Blue', primary: '#003399', secondary: '#ffffff', accent: '#cc0000' },
+      { name: 'Risi Orange', primary: '#ff6600', secondary: '#000000', accent: '#ffffff' }
+    ],
+    handlingNotes: 'Newcomer, straight-line pull',
+    drivetrain: 'RWD',
+    restrictor: 0
+  }
 ];
 
 export const TRACKS: TrackData[] = [
