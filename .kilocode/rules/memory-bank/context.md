@@ -28,6 +28,9 @@ NFS Unleashed is a fully playable 3D racing game built with Next.js 16, React 19
 - [x] Updated car roster with authentic GT3 specs: engine layouts (Front/Mid/Rear), displacement, torque, drivetrain (RWD/AWD), iconic liveries, handling characteristics
 - [x] Dynamic physics per car: suspension stiffness, grip levels, steering sensitivity based on handling rating
 - [x] Engine-specific power delivery: rear-engine cars (Porsche) to rear wheels, mid-engine cars balanced, front-engine cars with torque vectoring
+- [x] Top-down camera view: car appears at top of screen, road at bottom
+- [x] Fixed NaN speed values in HUD and physics calculations
+- [x] Comprehensive NaN protection for speed, RPM, gear, and physics calculations
 
 ## Current Structure
 

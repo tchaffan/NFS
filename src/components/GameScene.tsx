@@ -367,6 +367,14 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   // Store velocity reference for physics calculations
   const velocityRef = useRef<[number, number, number]>([0, 0, 0]);
 
+  // Subscribe to chassis velocity for speed tracking
+  useEffect(() => {
+    const unsubscribe = chassisApi.velocity.subscribe((v) => {
+      velocityRef.current = v;
+    });
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'ArrowUp') setControls(c => ({ ...c, forward: true }));
@@ -396,22 +404,27 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   useFrame(() => {
     // Realistic engine torque: use actual car torque value
     const gearRatios = [0, 3.8, 2.6, 1.9, 1.4, 1.1, 0.9];
-    const gearRatio = gearRatios[gear] || 1;
-    const maxEngineTorque = carTorque;  // Use actual torque from car data
+    // Ensure gear is valid and gearRatio is finite
+    const validGear = typeof gear === 'number' && gear >= 1 && gear <= 6 ? gear : 1;
+    const gearRatio = isFinite(gearRatios[validGear]) ? gearRatios[validGear] : 1;
+    const maxEngineTorque = isFinite(carTorque) ? carTorque : 450;  // Use actual torque from car data, default to 450
     const maxForce = maxEngineTorque * gearRatio;  // Force = torque / wheel radius
     const maxBrakeForce = 20000;       // Strong brakes (20,000 Nm per axle)
     const maxSteerVal = 0.5;        // ~30 degrees max steering
     
     // Steering sensitivity based on handling (better handling = more responsive)
-    const baseSteerSensitivity = 0.3 + ((carHandling - 8.0) * 0.05);
+    const steerSensitivity = isFinite(carHandling) ? (0.3 + ((carHandling - 8.0) * 0.05)) : 0.3;
 
-    // Track velocity for physics calculations
-    chassisApi.velocity.subscribe((v) => {
-      velocityRef.current = v;
-      const speedMPH = Math.sqrt(v[0] ** 2 + v[2] ** 2) * 2.237;
-      setSpeed(speedMPH);
-      onSpeedChange(speedMPH);
-    });
+    // Get current speed from velocity ref (not stale state)
+    const v = velocityRef.current;
+    const vx = isNaN(v[0]) ? 0 : v[0];
+    const vz = isNaN(v[2]) ? 0 : v[2];
+    const currentSpeed = Math.sqrt(vx * vx + vz * vz) * 2.237;
+    const validCurrentSpeed = isNaN(currentSpeed) || !isFinite(currentSpeed) ? 0 : currentSpeed;
+
+    // Update speed state and callback
+    setSpeed(validCurrentSpeed);
+    onSpeedChange(validCurrentSpeed);
 
     // Smooth throttle response for realism
     let targetThrottle = 0;
@@ -420,15 +433,14 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     
     // Gradual throttle application (no instant response)
     setThrottle(t => t + (targetThrottle - t) * 0.15);
-
+    
     // Automatic gear shifting based on RPM and speed
-    const currentSpeed = speed;
     let newGear = 1;
-    if (currentSpeed > 15) newGear = 2;
-    if (currentSpeed > 30) newGear = 3;
-    if (currentSpeed > 50) newGear = 4;
-    if (currentSpeed > 80) newGear = 5;
-    if (currentSpeed > 120) newGear = 6;
+    if (validCurrentSpeed > 15) newGear = 2;
+    if (validCurrentSpeed > 30) newGear = 3;
+    if (validCurrentSpeed > 50) newGear = 4;
+    if (validCurrentSpeed > 80) newGear = 5;
+    if (validCurrentSpeed > 120) newGear = 6;
     
     if (newGear !== gear) {
       setGear(newGear);
@@ -438,15 +450,16 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     // Realistic RPM calculation with gear ratios
     const baseRPM = 800;  // Idle RPM
     
-    // RPM affected by speed, gear, and throttle
-    const speedFactor = currentSpeed * 45;
+    // Use validGear and gearRatio from above (already defined)
     const throttleBoost = throttle > 0 ? throttle * 2000 : 0;
+    const speedFactor = validCurrentSpeed * 45;
     const calculatedRPM = baseRPM + (speedFactor * gearRatio) + throttleBoost;
     const targetRPM = Math.min(calculatedRPM, 7500);
+    const validRPM = isNaN(targetRPM) || !isFinite(targetRPM) ? 800 : targetRPM;
     
     // Smooth RPM transitions
-    setRPM(r => r + (targetRPM - r) * 0.2);
-    onRPMChange(rpm);
+    setRPM(r => r + (validRPM - r) * 0.2);
+    onRPMChange(validRPM);
 
     // Apply engine force based on drivetrain
     const engineForce = throttle * maxForce;
@@ -470,13 +483,13 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     }
 
     // Front-wheel drive assist for front-engine cars at low speed
-    if (currentSpeed < 15 && throttle > 0) {
+    if (validCurrentSpeed < 15 && throttle > 0) {
       vehicleApi.applyEngineForce(engineForce * 0.3, 0);
       vehicleApi.applyEngineForce(engineForce * 0.3, 1);
     }
 
     // Steering with speed-dependent sensitivity
-    const steerSpeedFactor = Math.max(0.3, 1 - (currentSpeed / 150));
+    const steerSpeedFactor = Math.max(0.3, 1 - (validCurrentSpeed / 150));
     const steerValue = controls.left ? maxSteerVal * steerSpeedFactor : 
                        controls.right ? -maxSteerVal * steerSpeedFactor : 0;
     
@@ -498,27 +511,28 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     vehicleApi.setBrake(brakeForce, 3);
 
     // Simulate downforce at high speeds (reduces understeer)
-    const downforceFactor = Math.min(currentSpeed / 100, 1) * 50;
+    const downforceFactor = Math.min(validCurrentSpeed / 100, 1) * 50;
     chassisApi.applyForce([0, -downforceFactor, 0], [0, 0, 0]);
 
     // Subscribe to position for camera and track bounds
     chassisApi.position.subscribe((p) => {
       chassisApi.rotation.subscribe((r) => {
-        // Dynamic camera that follows car
-        const offset = new Vector3(0, 2, -5);
+        // Top-down camera view: car at top of screen, road at bottom
+        // Camera positioned high above and behind, looking down at the car
+        const offset = new Vector3(0, 25, 15);  // High above, behind the car
         const rotation = new THREE.Euler(r[0], r[1], r[2]);
         offset.applyEuler(rotation);
         
         const targetPos = new Vector3(p[0] + offset.x, p[1] + offset.y, p[2] + offset.z);
         camera.position.lerp(targetPos, 0.08);
         
-        // Look ahead of the car
-        const lookTarget = new Vector3(p[0], p[1] + 0.5, p[2] - 2);
+        // Look at the car from above - positioned to show car at top of screen
+        const lookTarget = new Vector3(p[0], p[1], p[2] - 8);  // Look ahead of car
         lookTarget.applyEuler(new THREE.Euler(0, r[1], 0));
         camera.lookAt(lookTarget);
         
-        // Subtle camera roll with steering
-        camera.rotation.z = -steerValue * 0.15;
+        // Top-down view: minimal roll
+        camera.rotation.z = -steerValue * 0.05;
       });
     });
   });

@@ -13,6 +13,10 @@ interface HUDProps {
 }
 
 export default function HUD({ speed, rpm, gear, lapTime, lap = 1, position = 1, mode, carName = '', trackName = '' }: HUDProps) {
+  // Safeguard against NaN values
+  const safeSpeed = isNaN(speed) || !isFinite(speed) ? 0 : Math.abs(speed);
+  const safeRpm = isNaN(rpm) || !isFinite(rpm) ? 0 : rpm;
+  
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -20,7 +24,7 @@ export default function HUD({ speed, rpm, gear, lapTime, lap = 1, position = 1, 
     return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
   };
 
-  const rpmPercent = (rpm / 8000) * 100;
+  const rpmPercent = (safeRpm / 8000) * 100;
   const redlineStart = 85;
 
   return (
@@ -76,7 +80,7 @@ export default function HUD({ speed, rpm, gear, lapTime, lap = 1, position = 1, 
           <div className="bg-black/80 backdrop-blur-sm p-4 rounded-lg border border-white/10 w-80">
             <div className="flex justify-between items-center mb-2">
               <span className="text-white/70 text-xs uppercase tracking-wider">RPM</span>
-              <span className="text-white text-lg font-mono font-bold">{Math.round(rpm)}</span>
+              <span className="text-white text-lg font-mono font-bold">{Math.round(safeRpm)}</span>
             </div>
             <div className="h-4 bg-gray-900 rounded-full overflow-hidden relative">
               {/* Gear indicator marks */}
@@ -105,7 +109,7 @@ export default function HUD({ speed, rpm, gear, lapTime, lap = 1, position = 1, 
               <div>
                 <p className="text-white/70 text-xs uppercase tracking-wider mb-1">Speed</p>
                 <p className="text-white text-7xl font-bold font-mono leading-none">
-                  {Math.round(speed)}
+                  {Math.round(safeSpeed)}
                 </p>
                 <p className="text-white/70 text-sm mt-1">MPH</p>
               </div>
@@ -138,7 +142,7 @@ export default function HUD({ speed, rpm, gear, lapTime, lap = 1, position = 1, 
               <div className="h-2 bg-gray-900 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-blue-500 via-cyan-500 to-cyan-400"
-                  style={{ width: `${Math.min((speed / 200) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((safeSpeed / 200) * 100, 100)}%` }}
                 />
               </div>
             </div>
@@ -159,12 +163,12 @@ export default function HUD({ speed, rpm, gear, lapTime, lap = 1, position = 1, 
       </div>
 
       {/* Center - Speed Effect (G-force indicator) */}
-      {speed > 100 && (
+      {safeSpeed > 100 && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/20" 
             style={{ 
-              transform: `scale(${1 + (speed - 100) / 500})`,
-              opacity: Math.min((speed - 100) / 200, 0.5)
+              transform: `scale(${1 + (safeSpeed - 100) / 500})`,
+              opacity: Math.min((safeSpeed - 100) / 200, 0.5)
             }} 
           />
         </div>
