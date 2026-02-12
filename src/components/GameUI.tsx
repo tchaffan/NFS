@@ -13,6 +13,7 @@ export interface CarData {
   power: number;
   color: string;
   price: number;
+  weight: number; // kg
 }
 
 export interface TrackData {
@@ -26,16 +27,16 @@ export interface TrackData {
 }
 
 export const CARS: CarData[] = [
-  { id: 'porsche_gt3', name: '911 GT3 RS', manufacturer: 'Porsche', class: 'GT3', maxSpeed: 193, acceleration: 8.5, handling: 9.0, power: 518, color: '#ff6600', price: 185000 },
-  { id: 'lamborghini_gallardo', name: 'Gallardo LP 570-4', manufacturer: 'Lamborghini', class: 'GT3', maxSpeed: 192, acceleration: 8.4, handling: 8.8, power: 562, color: '#cccc00', price: 177000 },
-  { id: 'nissan_gtr', name: 'GT-R R35', manufacturer: 'Nissan', class: 'GT1', maxSpeed: 196, acceleration: 8.7, handling: 8.5, power: 485, color: '#333333', price: 79000 },
-  { id: 'mclaren_mp4', name: 'MP4-12C', manufacturer: 'McLaren', class: 'GT3', maxSpeed: 207, acceleration: 9.0, handling: 9.2, power: 616, color: '#ff0000', price: 245000 },
-  { id: 'bmw_m3', name: 'M3 E92 GTS', manufacturer: 'BMW', class: 'GT3', maxSpeed: 190, acceleration: 8.3, handling: 8.9, power: 450, color: '#ff6600', price: 135000 },
-  { id: 'ford_mustang', name: 'GT500', manufacturer: 'Ford', class: 'Muscle', maxSpeed: 180, acceleration: 7.8, handling: 7.0, power: 662, color: '#ffffff', price: 55000 },
-  { id: 'toyota_supra', name: 'Supra A80', manufacturer: 'Toyota', class: 'Tuner', maxSpeed: 175, acceleration: 7.5, handling: 7.8, power: 326, color: '#cc0000', price: 45000 },
-  { id: 'audi_r8', name: 'R8 LMS GT3', manufacturer: 'Audi', class: 'GT3', maxSpeed: 198, acceleration: 8.8, handling: 9.1, power: 570, color: '#ff0000', price: 210000 },
-  { id: 'mercedes_slr', name: 'SLR McLaren', manufacturer: 'Mercedes', class: 'GT1', maxSpeed: 206, acceleration: 8.9, handling: 8.7, power: 617, color: '#cccccc', price: 195000 },
-  { id: 'chevrolet_c6', name: 'Corvette Z06', manufacturer: 'Chevrolet', class: 'GT3', maxSpeed: 198, acceleration: 8.6, handling: 8.4, power: 505, color: '#ff0000', price: 88000 },
+  { id: 'porsche_gt3', name: '911 GT3 RS', manufacturer: 'Porsche', class: 'GT3', maxSpeed: 193, acceleration: 8.5, handling: 9.0, power: 518, color: '#ff6600', price: 185000, weight: 1440 },
+  { id: 'lamborghini_gallardo', name: 'Gallardo LP 570-4', manufacturer: 'Lamborghini', class: 'GT3', maxSpeed: 192, acceleration: 8.4, handling: 8.8, power: 562, color: '#cccc00', price: 177000, weight: 1340 },
+  { id: 'nissan_gtr', name: 'GT-R R35', manufacturer: 'Nissan', class: 'GT1', maxSpeed: 196, acceleration: 8.7, handling: 8.5, power: 485, color: '#333333', price: 79000, weight: 1740 },
+  { id: 'mclaren_mp4', name: 'MP4-12C', manufacturer: 'McLaren', class: 'GT3', maxSpeed: 207, acceleration: 9.0, handling: 9.2, power: 616, color: '#ff0000', price: 245000, weight: 1475 },
+  { id: 'bmw_m3', name: 'M3 E92 GTS', manufacturer: 'BMW', class: 'GT3', maxSpeed: 190, acceleration: 8.3, handling: 8.9, power: 450, color: '#ff6600', price: 135000, weight: 1595 },
+  { id: 'ford_mustang', name: 'GT500', manufacturer: 'Ford', class: 'Muscle', maxSpeed: 180, acceleration: 7.8, handling: 7.0, power: 662, color: '#ffffff', price: 55000, weight: 1770 },
+  { id: 'toyota_supra', name: 'Supra A80', manufacturer: 'Toyota', class: 'Tuner', maxSpeed: 175, acceleration: 7.5, handling: 7.8, power: 326, color: '#cc0000', price: 45000, weight: 1665 },
+  { id: 'audi_r8', name: 'R8 LMS GT3', manufacturer: 'Audi', class: 'GT3', maxSpeed: 198, acceleration: 8.8, handling: 9.1, power: 570, color: '#ff0000', price: 210000, weight: 1465 },
+  { id: 'mercedes_slr', name: 'SLR McLaren', manufacturer: 'Mercedes', class: 'GT1', maxSpeed: 206, acceleration: 8.9, handling: 8.7, power: 617, color: '#cccccc', price: 195000, weight: 1875 },
+  { id: 'chevrolet_c6', name: 'Corvette Z06', manufacturer: 'Chevrolet', class: 'GT3', maxSpeed: 198, acceleration: 8.6, handling: 8.4, power: 505, color: '#ff0000', price: 88000, weight: 1420 },
 ];
 
 export const TRACKS: TrackData[] = [

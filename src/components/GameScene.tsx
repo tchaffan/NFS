@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Physics, useBox, usePlane, useRaycastVehicle } from '@react-three/cannon';
 import { Vector3 } from 'three';
@@ -195,31 +195,138 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   const { camera } = useThree();
   
   const carColor = selectedCar?.color || '#cc0000';
+  const carMass = selectedCar?.weight || 1400;
+  const carPower = selectedCar?.power || 450;
+  
+  // Realistic physics constants
+  const wheelRadius = 0.35;
+  const wheelWidth = 0.3;
+  const chassisWidth = 1.8;
+  const chassisLength = 4.2;
+  const chassisHeight = 1.2;
+  
+  // Spawn at ground level with slight offset to ensure proper physics initialization
+  const spawnHeight = 1.5;
   
   const [chassisBody, chassisApi] = useBox(() => ({
-    mass: 1200,
-    position: [0, 2, 0],
-    args: [1.9, 1.3, 4.3],
+    mass: carMass,
+    position: [0, spawnHeight, 0],
+    args: [chassisWidth, chassisHeight, chassisLength],
+    // Add damping to prevent unrealistic bouncing
+    linearDamping: 0.1,
+    angularDamping: 0.5,
+    // Sleep settings to prevent jitter when stationary
+    sleepSpeedLimit: 0.5,
+    sleepTimeLimit: 1,
   }));
-
-  const wheelRadius = 0.4;
-  const wheelWidth = 0.3;
   
-  const [wheel1] = useBox(() => ({ mass: 50, args: [wheelWidth, wheelRadius * 2, wheelRadius * 2], position: [-0.9, 0.5, 1.3] }));
-  const [wheel2] = useBox(() => ({ mass: 50, args: [wheelWidth, wheelRadius * 2, wheelRadius * 2], position: [0.9, 0.5, 1.3] }));
-  const [wheel3] = useBox(() => ({ mass: 50, args: [wheelWidth, wheelRadius * 2, wheelRadius * 2], position: [-0.9, 0.5, -1.3] }));
-  const [wheel4] = useBox(() => ({ mass: 50, args: [wheelWidth, wheelRadius * 2, wheelRadius * 2], position: [0.9, 0.5, -1.3] }));
+  // Wheel positions relative to chassis - properly typed tuple array
+  const wheelPositions: [number, number, number][] = [
+    [-0.85, -0.3, 1.4],   // Front left
+    [0.85, -0.3, 1.4],    // Front right
+    [-0.85, -0.3, -1.4],  // Rear left
+    [0.85, -0.3, -1.4],   // Rear right
+  ];
+  
+  // Realistic suspension and wheel settings
+  const [wheel1] = useBox(() => ({ 
+    mass: 20, 
+    args: [wheelWidth, wheelRadius, wheelRadius], 
+    position: wheelPositions[0],
+    // High friction to grip the track
+    friction: 1.5,
+    // Prevent wheels from falling through
+    linearDamping: 0.3,
+    angularDamping: 0.3,
+  }));
+  const [wheel2] = useBox(() => ({ 
+    mass: 20, 
+    args: [wheelWidth, wheelRadius, wheelRadius], 
+    position: wheelPositions[1],
+    friction: 1.5,
+    linearDamping: 0.3,
+    angularDamping: 0.3,
+  }));
+  const [wheel3] = useBox(() => ({ 
+    mass: 20, 
+    args: [wheelWidth, wheelRadius, wheelRadius], 
+    position: wheelPositions[2],
+    friction: 1.5,
+    linearDamping: 0.3,
+    angularDamping: 0.3,
+  }));
+  const [wheel4] = useBox(() => ({ 
+    mass: 20, 
+    args: [wheelWidth, wheelRadius, wheelRadius], 
+    position: wheelPositions[3],
+    friction: 1.5,
+    linearDamping: 0.3,
+    angularDamping: 0.3,
+  }));
   
   const wheels = [wheel1, wheel2, wheel3, wheel4];
 
+  // Enhanced raycast vehicle with realistic physics
   const [vehicle, vehicleApi] = useRaycastVehicle(() => ({
     chassisBody,
-    wheels,
+    wheels: [wheel1, wheel2, wheel3, wheel4],
     wheelInfos: [
-      { axleLocal: [-1, 0, 0], directionLocal: [0, -1, 0], suspensionStiffness: 30, radius: wheelRadius, isFrontWheel: true, chassisConnectionPointLocal: [-0.9, 0, 1.3] },
-      { axleLocal: [1, 0, 0], directionLocal: [0, -1, 0], suspensionStiffness: 30, radius: wheelRadius, isFrontWheel: true, chassisConnectionPointLocal: [0.9, 0, 1.3] },
-      { axleLocal: [-1, 0, 0], directionLocal: [0, -1, 0], suspensionStiffness: 30, radius: wheelRadius, isFrontWheel: false, chassisConnectionPointLocal: [-0.9, 0, -1.3] },
-      { axleLocal: [1, 0, 0], directionLocal: [0, -1, 0], suspensionStiffness: 30, radius: wheelRadius, isFrontWheel: false, chassisConnectionPointLocal: [0.9, 0, -1.3] },
+      // Front left wheel
+      { 
+        axleLocal: [-1, 0, 0], 
+        directionLocal: [0, -1, 0], 
+        suspensionStiffness: 35,  // Stiffer for sporty handling
+        suspensionRestLength: 0.35,
+        radius: wheelRadius, 
+        isFrontWheel: true, 
+        chassisConnectionPointLocal: wheelPositions[0] as [number, number, number],
+        frictionSlip: 3,         // High grip
+        rollInfluence: 0.1,      // Reduce roll for stability
+        suspensionCompression: 4.5,
+        suspensionRelaxation: 3.5,
+      },
+      // Front right wheel
+      { 
+        axleLocal: [1, 0, 0], 
+        directionLocal: [0, -1, 0], 
+        suspensionStiffness: 35, 
+        suspensionRestLength: 0.35,
+        radius: wheelRadius, 
+        isFrontWheel: true, 
+        chassisConnectionPointLocal: wheelPositions[1] as [number, number, number],
+        frictionSlip: 3,
+        rollInfluence: 0.1,
+        suspensionCompression: 4.5,
+        suspensionRelaxation: 3.5,
+      },
+      // Rear left wheel
+      { 
+        axleLocal: [-1, 0, 0], 
+        directionLocal: [0, -1, 0], 
+        suspensionStiffness: 30,  // Slightly softer rear for traction
+        suspensionRestLength: 0.35,
+        radius: wheelRadius, 
+        isFrontWheel: false, 
+        chassisConnectionPointLocal: wheelPositions[2] as [number, number, number],
+        frictionSlip: 3.5,  // More grip at rear for launch
+        rollInfluence: 0.15,
+        suspensionCompression: 4.0,
+        suspensionRelaxation: 3.0,
+      },
+      // Rear right wheel
+      { 
+        axleLocal: [1, 0, 0], 
+        directionLocal: [0, -1, 0], 
+        suspensionStiffness: 30, 
+        suspensionRestLength: 0.35,
+        radius: wheelRadius, 
+        isFrontWheel: false, 
+        chassisConnectionPointLocal: wheelPositions[3] as [number, number, number],
+        frictionSlip: 3.5,
+        rollInfluence: 0.15,
+        suspensionCompression: 4.0,
+        suspensionRelaxation: 3.0,
+      },
     ],
   }));
 
@@ -235,6 +342,9 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   const [rpm, setRPM] = useState(1000);
   const [gear, setGear] = useState(1);
   const [throttle, setThrottle] = useState(0);
+  
+  // Store velocity reference for physics calculations
+  const velocityRef = useRef<[number, number, number]>([0, 0, 0]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -263,80 +373,133 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   }, []);
 
   useFrame(() => {
-    const maxForce = selectedCar ? (selectedCar.power / 2) : 2500;
-    const maxBrakeForce = 100;
-    const maxSteerVal = 0.5;
+    // Scale engine force based on car's actual power
+    const maxForce = carPower * 8;  // More realistic horsepower mapping
+    const maxBrakeForce = 80;       // Strong brakes for safety
+    const maxSteerVal = 0.6;        // Reasonable steering angle
 
+    // Track velocity for physics calculations
     chassisApi.velocity.subscribe((v) => {
+      velocityRef.current = v;
       const speedMPH = Math.sqrt(v[0] ** 2 + v[2] ** 2) * 2.237;
       setSpeed(speedMPH);
       onSpeedChange(speedMPH);
     });
 
+    // Smooth throttle response for realism
     let targetThrottle = 0;
     if (controls.forward) targetThrottle = 1;
-    if (controls.backward) targetThrottle = -0.5;
+    if (controls.backward) targetThrottle = -0.4;
     
-    setThrottle(t => t + (targetThrottle - t) * 0.1);
+    // Gradual throttle application (no instant response)
+    setThrottle(t => t + (targetThrottle - t) * 0.15);
 
+    // Automatic gear shifting based on RPM
+    const currentSpeed = speed;
     let newGear = 1;
-    if (speed > 15) newGear = 2;
-    if (speed > 35) newGear = 3;
-    if (speed > 60) newGear = 4;
-    if (speed > 90) newGear = 5;
-    if (speed > 120) newGear = 6;
+    if (currentSpeed > 10) newGear = 2;
+    if (currentSpeed > 25) newGear = 3;
+    if (currentSpeed > 45) newGear = 4;
+    if (currentSpeed > 70) newGear = 5;
+    if (currentSpeed > 100) newGear = 6;
     
     if (newGear !== gear) {
       setGear(newGear);
       onGearChange(newGear);
     }
 
-    const baseRPM = 1000;
-    const gearRatio = [0, 3.5, 2.5, 1.8, 1.3, 1.0, 0.8][gear] || 1;
-    const calculatedRPM = baseRPM + (speed * 50 * gearRatio) + (throttle * 1000);
-    const targetRPM = Math.min(calculatedRPM, 8000);
+    // Realistic RPM calculation with gear ratios
+    const baseRPM = 800;  // Idle RPM
+    const gearRatios = [0, 3.8, 2.6, 1.9, 1.4, 1.1, 0.9];
+    const gearRatio = gearRatios[gear] || 1;
     
-    setRPM(r => r + (targetRPM - r) * 0.1);
+    // RPM affected by speed, gear, and throttle
+    const speedFactor = currentSpeed * 40;
+    const throttleBoost = throttle > 0 ? throttle * 1500 : 0;
+    const calculatedRPM = baseRPM + (speedFactor * gearRatio) + throttleBoost;
+    const targetRPM = Math.min(calculatedRPM, 7500);
+    
+    // Smooth RPM transitions
+    setRPM(r => r + (targetRPM - r) * 0.2);
     onRPMChange(rpm);
 
+    // Apply engine force to rear wheels (rear-wheel drive)
     const engineForce = throttle * maxForce;
-    vehicleApi.applyEngineForce(engineForce, 2);
-    vehicleApi.applyEngineForce(engineForce, 3);
+    vehicleApi.applyEngineForce(engineForce, 2);  // Rear left
+    vehicleApi.applyEngineForce(engineForce, 3); // Rear right
 
-    const steerValue = controls.left ? maxSteerVal : controls.right ? -maxSteerVal : 0;
-    vehicleApi.setSteeringValue(steerValue, 0);
-    vehicleApi.setSteeringValue(steerValue, 1);
+    // Front-wheel drive assist for low-speed traction
+    if (currentSpeed < 15 && throttle > 0) {
+      vehicleApi.applyEngineForce(engineForce * 0.3, 0);
+      vehicleApi.applyEngineForce(engineForce * 0.3, 1);
+    }
 
-    const brakeForce = controls.brake ? maxBrakeForce : 0;
+    // Steering with speed-dependent sensitivity
+    const steerSpeedFactor = Math.max(0.3, 1 - (currentSpeed / 150));
+    const steerValue = controls.left ? maxSteerVal * steerSpeedFactor : 
+                       controls.right ? -maxSteerVal * steerSpeedFactor : 0;
+    
+    vehicleApi.setSteeringValue(steerValue, 0);  // Front left
+    vehicleApi.setSteeringValue(steerValue, 1);  // Front right
+
+    // Braking with anti-lock simulation
+    let brakeForce = 0;
+    if (controls.brake) {
+      brakeForce = maxBrakeForce;
+      // Reduce engine force when braking
+      vehicleApi.applyEngineForce(0, 2);
+      vehicleApi.applyEngineForce(0, 3);
+    }
+    
     vehicleApi.setBrake(brakeForce, 0);
     vehicleApi.setBrake(brakeForce, 1);
     vehicleApi.setBrake(brakeForce, 2);
     vehicleApi.setBrake(brakeForce, 3);
 
+    // Simulate downforce at high speeds (reduces understeer)
+    const downforceFactor = Math.min(currentSpeed / 100, 1) * 50;
+    chassisApi.applyForce([0, -downforceFactor, 0], [0, 0, 0]);
+
+    // Subscribe to position for camera and track bounds
     chassisApi.position.subscribe((p) => {
       chassisApi.rotation.subscribe((r) => {
-        const offset = new Vector3(0, 1.5, -4);
+        // Dynamic camera that follows car
+        const offset = new Vector3(0, 2, -5);
         const rotation = new THREE.Euler(r[0], r[1], r[2]);
         offset.applyEuler(rotation);
         
-        camera.position.lerp(new Vector3(p[0] + offset.x, p[1] + offset.y, p[2] + offset.z), 0.1);
-        camera.lookAt(p[0], p[1] + 0.5, p[2]);
+        const targetPos = new Vector3(p[0] + offset.x, p[1] + offset.y, p[2] + offset.z);
+        camera.position.lerp(targetPos, 0.08);
         
-        camera.rotation.z = -steerValue * 0.1 + r[2] * 0.3;
+        // Look ahead of the car
+        const lookTarget = new Vector3(p[0], p[1] + 0.5, p[2] - 2);
+        lookTarget.applyEuler(new THREE.Euler(0, r[1], 0));
+        camera.lookAt(lookTarget);
+        
+        // Subtle camera roll with steering
+        camera.rotation.z = -steerValue * 0.15;
       });
     });
   });
+
+  // Wheel visual positions matching physics
+  const wheelVisualPositions: [number, number, number][] = [
+    [-0.85, -0.3, 1.4],
+    [0.85, -0.3, 1.4],
+    [-0.85, -0.3, -1.4],
+    [0.85, -0.3, -1.4],
+  ];
 
   return (
     <group ref={vehicle}>
       <group ref={chassisBody}>
         <CarBody color={carColor} />
         
-        {/* Wheels */}
-        <Wheel position={[-0.9, 0, 1.3]} isFront={true} />
-        <Wheel position={[0.9, 0, 1.3]} isFront={true} />
-        <Wheel position={[-0.9, 0, -1.3]} isFront={false} />
-        <Wheel position={[0.9, 0, -1.3]} isFront={false} />
+        {/* Wheels aligned with physics */}
+        <Wheel position={wheelVisualPositions[0]} isFront={true} />
+        <Wheel position={wheelVisualPositions[1]} isFront={true} />
+        <Wheel position={wheelVisualPositions[2]} isFront={false} />
+        <Wheel position={wheelVisualPositions[3]} isFront={false} />
       </group>
     </group>
   );
@@ -393,7 +556,17 @@ export default function GameScene(props: GameSceneProps) {
   });
 
   return (
-    <Physics gravity={[0, -9.81, 0]} defaultContactMaterial={{ friction: 0.9 }}>
+    <Physics 
+      gravity={[0, -9.81, 0]} 
+      defaultContactMaterial={{ 
+        friction: 1.0,      // High friction for grip
+        restitution: 0.1,  // Low bounce
+        contactEquationStiffness: 1e8,
+        contactEquationRelaxation: 3,
+      }}
+      broadphase="SAP"  // Sweep and prune for better performance
+      allowSleep={true}  // Allow objects to sleep when stationary
+    >
       <ambientLight intensity={0.3} />
       <directionalLight
         position={[50, 50, 25]}
