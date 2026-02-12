@@ -212,9 +212,11 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     mass: carMass,
     position: [0, spawnHeight, 0],
     args: [chassisWidth, chassisHeight, chassisLength],
-    // Add damping to prevent unrealistic bouncing
-    linearDamping: 0.1,
-    angularDamping: 0.5,
+    // Low center of mass for stability - prevents tipping
+    offset: [0, -0.3, 0],
+    // Realistic drag values
+    linearDamping: 0.05,
+    angularDamping: 2.0,
     // Sleep settings to prevent jitter when stationary
     sleepSpeedLimit: 0.5,
     sleepTimeLimit: 1,
@@ -275,57 +277,61 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
       { 
         axleLocal: [-1, 0, 0], 
         directionLocal: [0, -1, 0], 
-        suspensionStiffness: 35,  // Stiffer for sporty handling
-        suspensionRestLength: 0.35,
+        suspensionStiffness: 35,  // ~35,000 N/m per wheel for 1500kg car
+        suspensionRestLength: 0.21,  // 70% of max travel (0.3m)
         radius: wheelRadius, 
         isFrontWheel: true, 
         chassisConnectionPointLocal: wheelPositions[0] as [number, number, number],
-        frictionSlip: 3,         // High grip
+        frictionSlip: 1.2,         // Grip limit before slip
         rollInfluence: 0.1,      // Reduce roll for stability
         suspensionCompression: 4.5,
         suspensionRelaxation: 3.5,
+        rollingFriction: 0.015,  // Rolling resistance
       },
       // Front right wheel
       { 
         axleLocal: [1, 0, 0], 
         directionLocal: [0, -1, 0], 
         suspensionStiffness: 35, 
-        suspensionRestLength: 0.35,
+        suspensionRestLength: 0.21,
         radius: wheelRadius, 
         isFrontWheel: true, 
         chassisConnectionPointLocal: wheelPositions[1] as [number, number, number],
-        frictionSlip: 3,
+        frictionSlip: 1.2,
         rollInfluence: 0.1,
         suspensionCompression: 4.5,
         suspensionRelaxation: 3.5,
+        rollingFriction: 0.015,
       },
       // Rear left wheel
       { 
         axleLocal: [-1, 0, 0], 
         directionLocal: [0, -1, 0], 
         suspensionStiffness: 30,  // Slightly softer rear for traction
-        suspensionRestLength: 0.35,
+        suspensionRestLength: 0.21,
         radius: wheelRadius, 
         isFrontWheel: false, 
         chassisConnectionPointLocal: wheelPositions[2] as [number, number, number],
-        frictionSlip: 3.5,  // More grip at rear for launch
+        frictionSlip: 1.3,  // Slightly more grip at rear
         rollInfluence: 0.15,
         suspensionCompression: 4.0,
         suspensionRelaxation: 3.0,
+        rollingFriction: 0.015,
       },
       // Rear right wheel
       { 
         axleLocal: [1, 0, 0], 
         directionLocal: [0, -1, 0], 
         suspensionStiffness: 30, 
-        suspensionRestLength: 0.35,
+        suspensionRestLength: 0.21,
         radius: wheelRadius, 
         isFrontWheel: false, 
         chassisConnectionPointLocal: wheelPositions[3] as [number, number, number],
-        frictionSlip: 3.5,
+        frictionSlip: 1.3,
         rollInfluence: 0.15,
         suspensionCompression: 4.0,
         suspensionRelaxation: 3.0,
+        rollingFriction: 0.015,
       },
     ],
   }));
@@ -373,10 +379,13 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   }, []);
 
   useFrame(() => {
-    // Scale engine force based on car's actual power
-    const maxForce = carPower * 8;  // More realistic horsepower mapping
-    const maxBrakeForce = 80;       // Strong brakes for safety
-    const maxSteerVal = 0.6;        // Reasonable steering angle
+    // Realistic engine torque: 300-500 Nm, scaled by gear
+    const gearRatios = [0, 3.8, 2.6, 1.9, 1.4, 1.1, 0.9];
+    const gearRatio = gearRatios[gear] || 1;
+    const maxEngineTorque = carPower * 10;  // ~4000 Nm peak torque
+    const maxForce = maxEngineTorque * gearRatio;  // Force = torque / wheel radius
+    const maxBrakeForce = 20000;       // Strong brakes (20,000 Nm per axle)
+    const maxSteerVal = 0.5;        // ~30 degrees max steering
 
     // Track velocity for physics calculations
     chassisApi.velocity.subscribe((v) => {
@@ -394,14 +403,14 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
     // Gradual throttle application (no instant response)
     setThrottle(t => t + (targetThrottle - t) * 0.15);
 
-    // Automatic gear shifting based on RPM
+    // Automatic gear shifting based on RPM and speed
     const currentSpeed = speed;
     let newGear = 1;
-    if (currentSpeed > 10) newGear = 2;
-    if (currentSpeed > 25) newGear = 3;
-    if (currentSpeed > 45) newGear = 4;
-    if (currentSpeed > 70) newGear = 5;
-    if (currentSpeed > 100) newGear = 6;
+    if (currentSpeed > 15) newGear = 2;
+    if (currentSpeed > 30) newGear = 3;
+    if (currentSpeed > 50) newGear = 4;
+    if (currentSpeed > 80) newGear = 5;
+    if (currentSpeed > 120) newGear = 6;
     
     if (newGear !== gear) {
       setGear(newGear);
@@ -410,12 +419,10 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
 
     // Realistic RPM calculation with gear ratios
     const baseRPM = 800;  // Idle RPM
-    const gearRatios = [0, 3.8, 2.6, 1.9, 1.4, 1.1, 0.9];
-    const gearRatio = gearRatios[gear] || 1;
     
     // RPM affected by speed, gear, and throttle
-    const speedFactor = currentSpeed * 40;
-    const throttleBoost = throttle > 0 ? throttle * 1500 : 0;
+    const speedFactor = currentSpeed * 45;
+    const throttleBoost = throttle > 0 ? throttle * 2000 : 0;
     const calculatedRPM = baseRPM + (speedFactor * gearRatio) + throttleBoost;
     const targetRPM = Math.min(calculatedRPM, 7500);
     
@@ -507,13 +514,13 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
 
 function Track() {
   const [ref] = usePlane(() => ({
-    rotation: [-Math.PI / 2, 0, 0],
+    rotation: [Math.PI / 2, 0, 0],
     position: [0, 0, 0],
   }));
 
   return (
     <group>
-      <mesh ref={ref} receiveShadow>
+      <mesh ref={ref} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1000, 1000]} />
         <meshStandardMaterial color="#2a2a2a" roughness={0.8} />
       </mesh>
