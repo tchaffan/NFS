@@ -148,6 +148,7 @@ export default function RacingGame() {
             shadows
             camera={{ position: [0, 1.5, -3], fov: 75 }}
             gl={{ antialias: true, alpha: false }}
+            style={{ background: '#1a1a2e' }}
           >
             <Suspense fallback={null}>
               <GameScene 

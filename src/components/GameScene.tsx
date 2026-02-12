@@ -622,7 +622,7 @@ export default function GameScene(props: GameSceneProps) {
       broadphase="SAP"  // Sweep and prune for better performance
       allowSleep={true}  // Allow objects to sleep when stationary
     >
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.6} />
       <directionalLight
         position={[50, 50, 25]}
         intensity={1.5}
@@ -639,7 +639,7 @@ export default function GameScene(props: GameSceneProps) {
 
       <Sky sunPosition={[100, 20, 100]} />
       <Environment preset="sunset" />
-      <fog attach="fog" args={['#1a1a1a', 50, 200]} />
+      <fog attach="fog" args={['#1a1a2e', 50, 200]} />
 
       <Track />
       <Vehicle {...props} />
