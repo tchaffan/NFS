@@ -17,6 +17,180 @@ interface GameSceneProps {
   selectedTrack: TrackData | null;
 }
 
+function Wheel({ position, isFront }: { position: [number, number, number], isFront: boolean }) {
+  return (
+    <group position={position}>
+      {/* Tire */}
+      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.4, 0.4, 0.3, 24]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+      </mesh>
+      {/* Rim */}
+      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.25, 0.25, 0.32, 8]} />
+        <meshStandardMaterial color="#888888" metalness={0.9} roughness={0.1} />
+      </mesh>
+      {/* Rim center */}
+      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.34, 16]} />
+        <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.2} />
+      </mesh>
+    </group>
+  );
+}
+
+function CarBody({ color }: { color: string }) {
+  return (
+    <group>
+      {/* Main body - lower section */}
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <boxGeometry args={[1.9, 0.6, 4.3]} />
+        <meshStandardMaterial color={color} metalness={0.8} roughness={0.15} />
+      </mesh>
+      
+      {/* Hood - front sloped section */}
+      <mesh position={[0, 0.55, 1.6]} rotation={[-0.15, 0, 0]} castShadow>
+        <boxGeometry args={[1.8, 0.15, 1.4]} />
+        <meshStandardMaterial color={color} metalness={0.8} roughness={0.15} />
+      </mesh>
+      
+      {/* Cabin / Windshield area */}
+      <mesh position={[0, 0.95, -0.1]} castShadow>
+        <boxGeometry args={[1.7, 0.6, 1.6]} />
+        <meshStandardMaterial color={color} metalness={0.8} roughness={0.15} />
+      </mesh>
+      
+      {/* Windshield - front */}
+      <mesh position={[0, 1.05, 0.7]} rotation={[-0.5, 0, 0]} castShadow>
+        <boxGeometry args={[1.6, 0.05, 0.8]} />
+        <meshStandardMaterial color="#1a3a5c" metalness={0.9} roughness={0.1} opacity={0.7} transparent />
+      </mesh>
+      
+      {/* Rear window */}
+      <mesh position={[0, 1.0, -0.95]} rotation={[0.4, 0, 0]} castShadow>
+        <boxGeometry args={[1.5, 0.05, 0.7]} />
+        <meshStandardMaterial color="#1a3a5c" metalness={0.9} roughness={0.1} opacity={0.7} transparent />
+      </mesh>
+      
+      {/* Side windows - left */}
+      <mesh position={[-0.86, 0.95, -0.1]} castShadow>
+        <boxGeometry args={[0.02, 0.45, 1.2]} />
+        <meshStandardMaterial color="#1a3a5c" metalness={0.9} roughness={0.1} opacity={0.6} transparent />
+      </mesh>
+      
+      {/* Side windows - right */}
+      <mesh position={[0.86, 0.95, -0.1]} castShadow>
+        <boxGeometry args={[0.02, 0.45, 1.2]} />
+        <meshStandardMaterial color="#1a3a5c" metalness={0.9} roughness={0.1} opacity={0.6} transparent />
+      </mesh>
+      
+      {/* Trunk / rear section */}
+      <mesh position={[0, 0.55, -1.7]} castShadow>
+        <boxGeometry args={[1.8, 0.35, 1.0]} />
+        <meshStandardMaterial color={color} metalness={0.8} roughness={0.15} />
+      </mesh>
+      
+      {/* Rear spoiler */}
+      <mesh position={[0, 0.85, -2.1]} castShadow>
+        <boxGeometry args={[1.8, 0.08, 0.25]} />
+        <meshStandardMaterial color="#111111" metalness={0.6} roughness={0.3} />
+      </mesh>
+      <mesh position={[-0.7, 0.75, -2.05]} castShadow>
+        <boxGeometry args={[0.1, 0.2, 0.15]} />
+        <meshStandardMaterial color="#111111" metalness={0.6} roughness={0.3} />
+      </mesh>
+      <mesh position={[0.7, 0.75, -2.05]} castShadow>
+        <boxGeometry args={[0.1, 0.2, 0.15]} />
+        <meshStandardMaterial color="#111111" metalness={0.6} roughness={0.3} />
+      </mesh>
+      
+      {/* Front bumper */}
+      <mesh position={[0, 0.2, 2.2]} castShadow>
+        <boxGeometry args={[1.9, 0.35, 0.2]} />
+        <meshStandardMaterial color="#222222" metalness={0.5} roughness={0.4} />
+      </mesh>
+      
+      {/* Front grille */}
+      <mesh position={[0, 0.25, 2.32]} castShadow>
+        <boxGeometry args={[1.4, 0.2, 0.05]} />
+        <meshStandardMaterial color="#111111" metalness={0.3} roughness={0.8} />
+      </mesh>
+      
+      {/* Headlights - left */}
+      <mesh position={[-0.65, 0.45, 2.16]} castShadow>
+        <boxGeometry args={[0.4, 0.15, 0.1]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffcc" emissiveIntensity={0.8} />
+      </mesh>
+      
+      {/* Headlights - right */}
+      <mesh position={[0.65, 0.45, 2.16]} castShadow>
+        <boxGeometry args={[0.4, 0.15, 0.1]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffcc" emissiveIntensity={0.8} />
+      </mesh>
+      
+      {/* Taillights - left */}
+      <mesh position={[-0.65, 0.5, -2.16]} castShadow>
+        <boxGeometry args={[0.4, 0.12, 0.05]} />
+        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.6} />
+      </mesh>
+      
+      {/* Taillights - right */}
+      <mesh position={[0.65, 0.5, -2.16]} castShadow>
+        <boxGeometry args={[0.4, 0.12, 0.05]} />
+        <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.6} />
+      </mesh>
+      
+      {/* Side mirrors - left */}
+      <mesh position={[-1.0, 0.85, 0.3]} castShadow>
+        <boxGeometry args={[0.15, 0.1, 0.2]} />
+        <meshStandardMaterial color={color} metalness={0.8} roughness={0.15} />
+      </mesh>
+      
+      {/* Side mirrors - right */}
+      <mesh position={[1.0, 0.85, 0.3]} castShadow>
+        <boxGeometry args={[0.15, 0.1, 0.2]} />
+        <meshStandardMaterial color={color} metalness={0.8} roughness={0.15} />
+      </mesh>
+      
+      {/* Front wheel arches - left */}
+      <mesh position={[-0.95, 0.35, 1.3]} castShadow>
+        <boxGeometry args={[0.2, 0.35, 0.7]} />
+        <meshStandardMaterial color="#111111" roughness={0.9} />
+      </mesh>
+      
+      {/* Front wheel arches - right */}
+      <mesh position={[0.95, 0.35, 1.3]} castShadow>
+        <boxGeometry args={[0.2, 0.35, 0.7]} />
+        <meshStandardMaterial color="#111111" roughness={0.9} />
+      </mesh>
+      
+      {/* Rear wheel arches - left */}
+      <mesh position={[-0.95, 0.35, -1.3]} castShadow>
+        <boxGeometry args={[0.2, 0.35, 0.7]} />
+        <meshStandardMaterial color="#111111" roughness={0.9} />
+      </mesh>
+      
+      {/* Rear wheel arches - right */}
+      <mesh position={[0.95, 0.35, -1.3]} castShadow>
+        <boxGeometry args={[0.2, 0.35, 0.7]} />
+        <meshStandardMaterial color="#111111" roughness={0.9} />
+      </mesh>
+      
+      {/* Door lines - left */}
+      <mesh position={[-0.96, 0.5, 0.2]} castShadow>
+        <boxGeometry args={[0.02, 0.35, 1.5]} />
+        <meshStandardMaterial color="#000000" metalness={0.5} roughness={0.5} />
+      </mesh>
+      
+      {/* Door lines - right */}
+      <mesh position={[0.96, 0.5, 0.2]} castShadow>
+        <boxGeometry args={[0.02, 0.35, 1.5]} />
+        <meshStandardMaterial color="#000000" metalness={0.5} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
 function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit<GameSceneProps, 'onLapTimeChange' | 'selectedTrack'>) {
   const { camera } = useThree();
   
@@ -25,7 +199,7 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
   const [chassisBody, chassisApi] = useBox(() => ({
     mass: 1200,
     position: [0, 2, 0],
-    args: [2, 0.8, 4.5],
+    args: [1.9, 1.3, 4.3],
   }));
 
   const wheelRadius = 0.4;
@@ -155,22 +329,15 @@ function Vehicle({ onSpeedChange, onRPMChange, onGearChange, selectedCar }: Omit
 
   return (
     <group ref={vehicle}>
-      <mesh ref={chassisBody} castShadow>
-        <boxGeometry args={[2, 0.8, 4.5]} />
-        <meshStandardMaterial color={carColor} metalness={0.8} roughness={0.2} />
-      </mesh>
-      
-      <mesh position={[0, 0.8, -2]} castShadow>
-        <boxGeometry args={[1.8, 0.1, 0.5]} />
-        <meshStandardMaterial color="#111111" />
-      </mesh>
-
-      {wheels.map((wheel, i) => (
-        <mesh key={i} ref={wheel} castShadow>
-          <cylinderGeometry args={[wheelRadius, wheelRadius, wheelWidth, 16]} />
-          <meshStandardMaterial color="#1a1a1a" />
-        </mesh>
-      ))}
+      <group ref={chassisBody}>
+        <CarBody color={carColor} />
+        
+        {/* Wheels */}
+        <Wheel position={[-0.9, 0, 1.3]} isFront={true} />
+        <Wheel position={[0.9, 0, 1.3]} isFront={true} />
+        <Wheel position={[-0.9, 0, -1.3]} isFront={false} />
+        <Wheel position={[0.9, 0, -1.3]} isFront={false} />
+      </group>
     </group>
   );
 }
