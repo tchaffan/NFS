@@ -23,6 +23,8 @@ NFS Unleashed is a fully playable 3D racing game built with Next.js 16, React 19
 - [x] Post-processing effects (bloom, vignette, DOF, chromatic aberration)
 - [x] Engine audio with Web Audio API
 - [x] Build verification and TypeScript/lint checks
+- [x] Fixed track orientation (car now spawns above ground with gravity pulling down)
+- [x] Realistic car physics: low center of mass, proper suspension (35 stiffness, 0.21m rest), rolling friction 0.015, engine torque scaled with gears, 20,000 Nm brakes, ~30° max steering
 
 ## Current Structure
 
@@ -94,3 +96,4 @@ export async function GET() {
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| 2026-02-12 | Fixed car/track orientation and implemented realistic physics per Unity specs |
